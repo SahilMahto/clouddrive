@@ -70,9 +70,13 @@ if (AZURE_CONN_STR && AZURE_CONN_STR.trim()) {
 
 // Guarantee local storage folder existence if Azure is inactive
 if (!useAzure) {
-    if (!fs.existsSync(LOCAL_STORAGE_DIR)) {
-        fs.mkdirSync(LOCAL_STORAGE_DIR);
-        console.log(`Created local storage directory at: ${LOCAL_STORAGE_DIR}`);
+    try {
+        if (!fs.existsSync(LOCAL_STORAGE_DIR)) {
+            fs.mkdirSync(LOCAL_STORAGE_DIR);
+            console.log(`Created local storage directory at: ${LOCAL_STORAGE_DIR}`);
+        }
+    } catch (err) {
+        console.log(`Warning: Local disk is read-only (expected on Vercel): ${err.message}`);
     }
 }
 
@@ -329,10 +333,15 @@ app.get('/api/download/:filename', async (req, res) => {
     }
 });
 
-// Start listening
-app.listen(PORT, () => {
-    console.log(`====================================================`);
-    console.log(`CloudDrive application server successfully started!`);
-    console.log(`Local web address: http://localhost:${PORT}`);
-    console.log(`====================================================`);
-});
+// Start listening (only if not running in Vercel serverless environment)
+if (process.env.VERCEL !== '1') {
+    app.listen(PORT, () => {
+        console.log(`====================================================`);
+        console.log(`CloudDrive application server successfully started!`);
+        console.log(`Local web address: http://localhost:${PORT}`);
+        console.log(`====================================================`);
+    });
+}
+
+// Export the app for Vercel serverless routing
+module.exports = app;
