@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CloudDrive - Mini Azure Cloud File Portal</title>
+    <!-- Premium Typography: Google Fonts (Outfit and Inter) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Icon System: FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Local Custom Stylesheet -->
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="dark-mode"> <!-- Defaults to Dark Mode for premium aesthetic -->
+
+    <!-- Main Wrapper -->
+    <div class="app-container">
+        
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-logo">
+                <div class="logo-icon">
+                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                </div>
+                <h1>Cloud<span>Drive</span></h1>
+            </div>
+            
+            <div class="header-actions">
+                <!-- Storage Mode Status Badge -->
+                <div id="storage-badge" class="badge loading-badge">
+                    <span class="badge-dot"></span>
+                    <span id="badge-text">Connecting...</span>
+                </div>
+                
+                <!-- Dark/Light Theme Toggle -->
+                <button id="theme-toggle" class="icon-btn" title="Toggle Theme" aria-label="Toggle Theme">
+                    <i class="fa-solid fa-sun" id="theme-icon-sun"></i>
+                    <i class="fa-solid fa-moon" id="theme-icon-moon" style="display: none;"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- System Warning Banner (Shown only in Local Demo Mode) -->
+        <div id="demo-banner" class="demo-warning-banner" style="display: none;">
+            <div class="banner-content">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                <span><strong>Demo Mode:</strong> Running with local storage. Configure <code>AZURE_STORAGE_CONNECTION_STRING</code> in your <code>.env</code> file to sync with Azure Blob Storage.</span>
+            </div>
+        </div>
+
+        <!-- Dashboard Grid Layout -->
+        <main class="dashboard">
+            
+            <!-- Left Panel: Actions & Stats -->
+            <section class="sidebar">
+                
+                <!-- Upload File Box -->
+                <div class="card upload-card">
+                    <h2>Upload File</h2>
+                    <p class="subtitle">Upload PDFs, images, or documents to the cloud</p>
+                    
+                    <div id="drop-zone" class="drop-zone">
+                        <input type="file" id="file-input" class="file-input" hidden>
+                        <div class="drop-zone-content">
+                            <div class="upload-icon-container">
+                                <i class="fa-solid fa-cloud-arrow-up cloud-icon"></i>
+                            </div>
+                            <p class="drop-text-primary">Drag & Drop file here</p>
+                            <p class="drop-text-secondary">or <span class="browse-btn">browse your device</span></p>
+                            <p class="file-limit-text">Maximum file size: 10 MB</p>
+                        </div>
+                    </div>
+
+                    <!-- Selected File Panel (Visible when a file is staged/uploading) -->
+                    <div id="upload-progress-container" class="upload-progress-container" style="display: none;">
+                        <div class="staged-file-info">
+                            <i class="fa-solid fa-file-invoice file-staged-icon"></i>
+                            <div class="file-details">
+                                <p id="staged-filename" class="filename">document.pdf</p>
+                                <p id="staged-filesize" class="filesize">2.4 MB</p>
+                            </div>
+                        </div>
+                        <div class="progress-bar-wrapper">
+                            <div class="progress-bar">
+                                <div id="progress-fill" class="progress-fill" style="width: 0%;"></div>
+                            </div>
+                            <span id="progress-percent" class="progress-percent">0%</span>
+                        </div>
+                        <div class="upload-actions">
+                            <span id="upload-status-text" class="status-text"><i class="fa-solid fa-spinner fa-spin"></i> Uploading to Azure...</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Stats Box -->
+                <div class="card stats-card">
+                    <h2>Drive Overview</h2>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <span class="stat-label">Total Files</span>
+                            <span id="stat-count" class="stat-value">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Storage Used</span>
+                            <span id="stat-size" class="stat-value">0 KB</span>
+                        </div>
+                    </div>
+                    <div class="storage-indicator-bar">
+                        <div id="storage-bar-fill" class="storage-bar-fill" style="width: 0%;"></div>
+                    </div>
+                    <p class="storage-footnote">Visual indicators reflect files uploaded in current container.</p>
+                </div>
+            </section>
+
+            <!-- Right Panel: Files List -->
+            <section class="content-area">
+                
+                <!-- Filter and Search controls -->
+                <div class="control-bar">
+                    <div class="search-box">
+                        <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                        <input type="text" id="search-input" placeholder="Search files by name...">
+                    </div>
+                    
+                    <div class="filter-chips">
+                        <button class="chip active" data-filter="all">All</button>
+                        <button class="chip" data-filter="pdf"><i class="fa-solid fa-file-pdf"></i> PDFs</button>
+                        <button class="chip" data-filter="image"><i class="fa-solid fa-file-image"></i> Images</button>
+                        <button class="chip" data-filter="doc"><i class="fa-solid fa-file-word"></i> Docs</button>
+                        <button class="chip" data-filter="other"><i class="fa-solid fa-folder-open"></i> Others</button>
+                    </div>
+                </div>
+
+                <!-- Files Showcase (Grid/List) -->
+                <div class="files-container">
+                    <div class="section-title-row">
+                        <h2>My Files</h2>
+                        <span id="file-counter-subtitle" class="subtitle">0 items</span>
+                    </div>
+
+                    <!-- Loading Spinner -->
+                    <div id="loading-spinner" class="loading-state">
+                        <div class="spinner"></div>
+                        <p>Syncing files with cloud storage...</p>
+                    </div>
+
+                    <!-- Files Grid -->
+                    <div id="files-grid" class="files-grid" style="display: none;">
+                        <!-- Dynamically filled by JS -->
+                    </div>
+
+                    <!-- Empty State -->
+                    <div id="empty-state" class="empty-state" style="display: none;">
+                        <div class="empty-icon-wrapper">
+                            <i class="fa-regular fa-folder-open"></i>
+                        </div>
+                        <h3>No files in this drive yet</h3>
+                        <p>Upload a file using the panel on the left. Drag files directly or select them manually.</p>
+                    </div>
+                </div>
+
+            </section>
+        </main>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Client-side Logic Script -->
+    <script src="/static/main.js"></script>
+</body>
+</html>
