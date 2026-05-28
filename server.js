@@ -132,21 +132,23 @@ app.get('/api/files', async (req, res) => {
     } else {
         // Read local files
         try {
-            const filenames = fs.readdirSync(LOCAL_STORAGE_DIR);
-            for (const filename of filenames) {
-                const filePath = path.join(LOCAL_STORAGE_DIR, filename);
-                const stat = fs.statSync(filePath);
-                
-                if (stat.isFile()) {
-                    const localUrl = `${req.protocol}://${req.get('host')}/local_storage/${encodeURIComponent(filename)}`;
-                    files.push({
-                        name: filename,
-                        size: stat.size,
-                        last_modified: stat.mtime.toISOString(),
-                        url: localUrl,
-                        download_url: localUrl,
-                        storage: 'Local'
-                    });
+            if (fs.existsSync(LOCAL_STORAGE_DIR)) {
+                const filenames = fs.readdirSync(LOCAL_STORAGE_DIR);
+                for (const filename of filenames) {
+                    const filePath = path.join(LOCAL_STORAGE_DIR, filename);
+                    const stat = fs.statSync(filePath);
+                    
+                    if (stat.isFile()) {
+                        const localUrl = `${req.protocol}://${req.get('host')}/local_storage/${encodeURIComponent(filename)}`;
+                        files.push({
+                            name: filename,
+                            size: stat.size,
+                            last_modified: stat.mtime.toISOString(),
+                            url: localUrl,
+                            download_url: localUrl,
+                            storage: 'Local'
+                        });
+                    }
                 }
             }
         } catch (err) {
